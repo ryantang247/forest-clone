@@ -90,7 +90,7 @@ fun TreeView(
     var showBottomSheet by remember { mutableStateOf(false) }
 
     //stores in Hashmap for all acitivites to be able to refer, but also limited
-    var selectedTimePeriod by rememberSaveable { mutableIntStateOf(0) }
+    var selectedTimePeriod by remember { mutableIntStateOf(0) }
 
     //clearing all activities on top of the current activity in the stack
     Column(
@@ -143,7 +143,7 @@ fun TreeView(
                             val bundle = Bundle()
                             bundle.putInt("Time", selectedTimePeriod)
                             Log.d("ButtonClicked " , Screen.Timer.route)
-                            navController.navigate(Screen.Timer.route) },
+                            navController.navigate(Screen.Timer.route  + "/$selectedTimePeriod") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(Color.Blue)

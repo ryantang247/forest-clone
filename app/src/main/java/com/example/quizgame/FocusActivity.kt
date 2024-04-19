@@ -6,8 +6,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.os.CountDownTimer
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,11 +16,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,42 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.quizgame.screen.Screen
-import com.example.quizgame.ui.theme.QuizGameTheme
 
-
-//class FocusActivity: ComponentActivity() {
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//
-//        setContent {
-//            QuizGameTheme {
-//                // A surface container using the 'background' color from the theme
-//
-//                val loggedIn = remember { mutableStateOf(false) }
-//                val loginResponseCallback = remember { mutableStateOf(false) }
-//
-//                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-//
-////                    if(!loggedIn.value){
-////                        LoginScreen(loginResponseCallback)
-////
-////                    }else {
-//                        TreeViewFocus(
-//                            treeImage = painterResource(id = R.drawable.tree),
-//                            buttonText = "Open",
-//                            onButtonClick = {}
-//                        )
-//                }
-//            }
-//        }
-//    }
-//
-//}
 
 @Composable
 fun TreeViewFocus(
@@ -77,22 +49,20 @@ fun TreeViewFocus(
     timerInitialValue: Int,
     navController: NavController
 ) {
-    val currentActivity = LocalContext.current as? Activity
-    val currentContext = LocalContext.current
-    var isTimerFinished by remember { mutableStateOf(false) }
 
+    var isTimerFinished by remember { mutableStateOf(false) }
+    var openAlertDialog by  remember { mutableStateOf(false) }
     var timerValue by remember { mutableIntStateOf(timerInitialValue * 100) }
 
     //the key will induce change in LaunchedEffect
     LaunchedEffect(key1 =  timerValue){
-        startTimer(currentContext)
+//        startTimer(currentContext)
         if(timerValue>0 && !isTimerFinished){
             timerValue -=1
         }else {
             timerValue =0
             isTimerFinished = true
-//
-            showPopup(currentContext, navController)
+
         }
     }
     Column(
@@ -125,6 +95,18 @@ fun TreeViewFocus(
                 Text(text = "Cancel")
             }
         }
+        AlertDialogExample(
+            isTimerFinished = isTimerFinished,
+            onDismissRequest = { openAlertDialog = false },
+            onConfirmation = {
+                openAlertDialog = false
+                println("Confirmed!") // Add logic here to handle confirmation.
+            },
+            dialogTitle = "Timer finished",
+            dialogText = "Great job focusing!",
+            icon = Icons.Default.Info ,
+            navController
+        )
     }
 }
 
@@ -141,26 +123,44 @@ private fun startTimer(context: Context) {
     }.start()
 }
 
-private fun showPopup(context: Context, navController:NavController) {
-    val activity = context as? Activity ?: return // Ensure context is an Activity
 
-    if (activity.isFinishing) {
-        return // Don't show dialog if activity is finishing
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AlertDialogExample(
+    isTimerFinished: Boolean,
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    dialogTitle: String,
+    dialogText: String,
+    icon: ImageVector,
+    navController: NavController
+) {
+    if (isTimerFinished) {
+    AlertDialog(
+        icon = {
+            Icon(icon, contentDescription = "Example Icon")
+        },
+        title = {
+            Text(text = dialogTitle)
+        },
+        text = {
+            Text(text = dialogText)
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                    navController.navigate(Screen.Home.route)
+
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+    )
     }
-
-    val builder = AlertDialog.Builder(context)
-    builder.setTitle("Timer Finished")
-    builder.setMessage("Your timer has finished!")
-
-    builder.setPositiveButton("OK") { dialog, _ ->
-        // Dismiss dialog and finish activity only if activity is not finishing
-        if (!activity.isFinishing) {
-            navController.navigate(Screen.Home.route)
-            dialog.dismiss()
-            activity.finish()
-        }
-    }
-
-
 }
 
