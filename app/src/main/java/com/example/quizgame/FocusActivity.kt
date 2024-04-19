@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quizgame.screen.Screen
 
@@ -52,17 +54,23 @@ fun TreeViewFocus(
 
     var isTimerFinished by remember { mutableStateOf(false) }
     var openAlertDialog by  remember { mutableStateOf(false) }
-    var timerValue by remember { mutableIntStateOf(timerInitialValue * 100) }
+    var timerValue by remember { mutableIntStateOf(timerInitialValue *  60000) }
 
     //the key will induce change in LaunchedEffect
-    LaunchedEffect(key1 =  timerValue){
-//        startTimer(currentContext)
-        if(timerValue>0 && !isTimerFinished){
-            timerValue -=1
-        }else {
-            timerValue =0
-            isTimerFinished = true
+    DisposableEffect(Unit) {
+        val timer = object : CountDownTimer(timerValue.toLong(), 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                timerValue = millisUntilFinished.toInt()
+            }
 
+            override fun onFinish() {
+                isTimerFinished = true
+            }
+        }
+        timer.start()
+
+        onDispose {
+            timer.cancel()
         }
     }
     Column(
@@ -77,14 +85,10 @@ fun TreeViewFocus(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = treeImage,
-                contentDescription = "Tree",
-                modifier = Modifier.size(200.dp)
-            )
             Text(
-                text = "Timer: $timerValue",
-                modifier = Modifier.padding(16.dp)
+                text = formatTime(timerValue),
+                modifier = Modifier.padding(16.dp),
+                fontSize = 40.sp
             )
             Button(
                 onClick = { navController.navigate(Screen.Home.route)},
@@ -110,17 +114,24 @@ fun TreeViewFocus(
     }
 }
 
-private fun startTimer(context: Context) {
-    object : CountDownTimer(60000, 1000) { // 60 seconds countdown
+private fun startTimer(totalDurationMillis: Long, tickIntervalMillis: Long, onTick: (Long) -> Unit, onFinish: () -> Unit) {
+    object : CountDownTimer(totalDurationMillis, tickIntervalMillis) {
         override fun onTick(millisUntilFinished: Long) {
-            // Timer is ticking
+            onTick(millisUntilFinished)
         }
 
         override fun onFinish() {
-            // Timer finished, show the popup
-            return
+            onFinish()
         }
     }.start()
+}
+@Composable
+private fun formatTime(milliseconds: Int): String {
+    val hours = milliseconds / (1000 * 60 * 60)
+    val minutes = (milliseconds % (1000 * 60 * 60)) / (1000 * 60)
+    val seconds = ((milliseconds % (1000 * 60 * 60)) % (1000 * 60) / 1000)
+
+    return String.format("%02d:%02d:%02d", hours, minutes, seconds)
 }
 
 
